@@ -10,30 +10,18 @@
       rel="stylesheet"
     />
     <style>
-      .loading-screen {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(255, 255, 255, 0.8);
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        z-index: 9999;
-      }
-
       .mx-muito {
         padding: 0px 100px;
       }
 
       /* Estilo das imagens */
       #image-container img {
-        width: 100%; /* A imagem vai preencher a largura da célula */
-        height: auto; /* Manter a proporção */
-        border-radius: 8px;
         box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-        margin-bottom: 15px;
+      }
+
+      body.dark-mode {
+        background-color: #333;
+        color: #fff;
       }
     </style>
 
@@ -50,90 +38,122 @@
       crossorigin="anonymous"
     ></script>
   </head>
-  <body>
-    <div class="mt-5 mx-muito">
-      <h1>Conteúdo da Página</h1>
-      <button id="gerar_token">Gerar token</button>
-      <div class="grid gap-3">
-        <div id="image-container" class="row"></div>
+  <body class="dark-mode">
+    <div class="container">
+      <div class="mt-5 mx-muito">
+        <h1>Discos</h1>
+        <div class="grid gap-3">
+          <div id="image-container" class="row"></div>
+        </div>
+      </div>
+
+      <div
+        id="loading"
+        class="d-flex row w-100 justify-content-center align-items-center"
+      >
+        <div class="spinner-border text-primary" role="status">
+          <span class="visually-hidden">Loading...</span>
+        </div>
       </div>
     </div>
 
+    <!-- #region Templates -->
+    <template id="image-template">
+      <div class="col-12 col-md-3 rounded">
+        <img
+          class="rounded-lg mb-3"
+          src=""
+          alt=""
+          style="object-fit: cover; aspect-ratio: 1/1; width: 100%"
+        />
+      </div>
+    </template>
+    <!-- #endregion -->
+
     <script>
-      const url = "https://ucsdiscosapi.azurewebsites.net";
-      let token = "";
+      $(document).ready(async function () {
+        const url = "https://ucsdiscosapi.azurewebsites.net";
+        var token = "";
 
-      async function autenticar() {
-        const endpoint = "Discos/autenticar";
-        const url_autenticar = `${url}/${endpoint}`;
+        async function autenticar() {
+          const endpoint = "Discos/autenticar";
+          const url_autenticar = `${url}/${endpoint}`;
 
-        const response = await fetch(url_autenticar, {
-          method: "POST",
-          headers: {
-            ChaveApi: "8175fA5f6098c5301022f475da32a2aa",
-            accept: "*/*",
-          },
-        });
-
-        if (!response.ok) {
-          // TODO(marhaubrich): Tratar o erro de forma mais adequada
-          console.log("Erro ao autenticar");
-          return;
-        }
-
-        token = await response.text();
-      }
-
-      async function discosRecords(numeroInicio = 1, quantidade = 12) {
-        if (!token) {
-          console.log("Token não encontrado. Autentique primeiro.");
-          return;
-        }
-        const response = await fetch(
-          `https://ucsdiscosapi.azurewebsites.net/Discos/records?numeroInicio=${numeroInicio}&quantidade=${quantidade}`,
-          {
-            method: "GET",
+          const response = await fetch(url_autenticar, {
+            method: "POST",
             headers: {
-              TokenApiUCS: token,
+              ChaveApi: "8175fA5f6098c5301022f475da32a2aa",
               accept: "*/*",
             },
-          }
-        );
+          });
 
-        if (!response.ok) {
-          // TODO(marhaubrich): Tratar o erro de forma mais adequada
-          console.log("Erro ao buscar os discos");
-          return;
+          if (!response.ok) {
+            // TODO(marhaubrich): Tratar o erro de forma mais adequada
+            console.log("Erro ao autenticar");
+            return;
+          }
+
+          token = await response.text();
         }
 
-        const data = await response.json();
+        function loading(active) {
+          const loading = $("#loading");
+          if (active) {
+            loading.toggleClass("d-flex", true);
+            loading.toggleClass("d-none", false);
+          } else {
+            loading.toggleClass("d-flex", false);
+            loading.toggleClass("d-none", true);
+          }
+        }
 
-        data.forEach((item) => {
-          const base64Image = `data:image/png;base64,${item.imagemEmBase64}`;
-          const descricaoPrimaria = item.descricaoPrimaria;
+        async function discosRecords(numeroInicio = 1, quantidade = 12) {
+          loading(true);
+          if (!token) {
+            console.log("Token não encontrado. Autentique primeiro.");
+            loading(false);
+            return;
+          }
+          const response = await fetch(
+            `https://ucsdiscosapi.azurewebsites.net/Discos/records?numeroInicio=${numeroInicio}&quantidade=${quantidade}`,
+            {
+              method: "GET",
+              headers: {
+                TokenApiUCS: token,
+                accept: "*/*",
+              },
+            }
+          );
 
-          const imgElement = document.createElement("img");
-          imgElement.src = base64Image;
-          imgElement.alt = descricaoPrimaria;
-          imgElement.style =
-            "object-fit: cover; aspect-ratio: 1/1;width: 100%;";
+          if (!response.ok) {
+            // TODO(marhaubrich): Tratar o erro de forma mais adequada
+            console.log("Erro ao buscar os discos");
+            loading(false);
+            return;
+          }
 
-          const imageDiv = document.createElement("div");
-          imageDiv.classList.add("col-12", "col-md-3");
+          const data = await response.json();
 
-          imageDiv.appendChild(imgElement);
+          data.forEach((item) => {
+            const base64Image = `data:image/png;base64,${item.imagemEmBase64}`;
+            const descricaoPrimaria = item.descricaoPrimaria;
 
-          const imageContainer = document.getElementById("image-container");
-          imageContainer.appendChild(imageDiv);
-        });
-      }
+            const $imageTemplate = $("#image-template").html();
+            const $imageDiv = $($imageTemplate);
 
-      $(document).ready(function () {
-        $("#gerar_token").click(async function () {
-          await autenticar();
-          discosRecords();
-          console.log(token);
-        });
+            $imageDiv
+              .find("img")
+              .attr("src", base64Image)
+              .attr("alt", descricaoPrimaria);
+
+            $("#image-container").append($imageDiv);
+          });
+
+          loading(false);
+        }
+
+        await autenticar();
+        await discosRecords();
       });
     </script>
   </body>
