@@ -29,6 +29,28 @@
         padding: 20px;
         margin-top: 20px;
       }
+
+      /* Dark theme modal styles */
+      .dark-mode .modal-content {
+        background-color: #2b2b2b;
+        border: 1px solid #444;
+      }
+
+      .dark-mode .modal-header {
+        border-bottom: 1px solid #444;
+      }
+
+      .dark-mode .modal-footer {
+        border-top: 1px solid #444;
+      }
+
+      .dark-mode .btn-close {
+        filter: invert(1) grayscale(100%) brightness(200%);
+      }
+
+      .dark-mode .modal-title {
+        color: #fff;
+      }
     </style>
 
     <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
@@ -64,13 +86,56 @@
     <template id="image-template">
       <div class="col-12 col-md-3 rounded">
         <img
-          class="rounded-lg mb-3"
+          class="rounded-lg mb-3 clickable-image"
           src=""
           alt=""
-          style="object-fit: cover; aspect-ratio: 1/1; width: 100%"
+          style="
+            object-fit: cover;
+            aspect-ratio: 1/1;
+            width: 100%;
+            cursor: pointer;
+          "
+          data-bs-toggle="modal"
+          data-bs-target="#imageModal"
         />
       </div>
     </template>
+
+    <!-- Modal -->
+    <div
+      class="modal fade"
+      id="imageModal"
+      tabindex="-1"
+      aria-labelledby="imageModalLabel"
+      aria-hidden="true"
+    >
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title text-white" id="imageModalLabel"></h5>
+            <button
+              type="button"
+              class="btn-close"
+              data-bs-dismiss="modal"
+              aria-label="Close"
+            ></button>
+          </div>
+          <div class="modal-body text-white">
+            <img class="w-100 rounded-lg mb-3" id="modalImage" src="" alt="" />
+            <p id="modalDescSecundaria" class="mt-2"></p>
+          </div>
+          <div class="modal-footer">
+            <button
+              type="button"
+              class="btn btn-secondary"
+              data-bs-dismiss="modal"
+            >
+              Fechar
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
     <!-- #endregion -->
 
     <script>
@@ -161,17 +226,30 @@
           data.forEach((item) => {
             const base64Image = `data:image/png;base64,${item.imagemEmBase64}`;
             const descricaoPrimaria = item.descricaoPrimaria;
+            const descricaoSecundaria = item.descricaoSecundaria;
 
             const $imageTemplate = $("#image-template").html();
             const $imageDiv = $($imageTemplate);
 
-            $imageDiv
-              .find("img")
+            const $img = $imageDiv.find("img");
+            $img
               .attr("src", base64Image)
-              .attr("alt", descricaoPrimaria);
+              .attr("alt", descricaoPrimaria)
+              .data("descPrimaria", descricaoPrimaria)
+              .data("descSecundaria", descricaoSecundaria);
 
             $("#image-container").append($imageDiv);
           });
+
+          // Add click handler for images
+          $(".clickable-image")
+            .off("click")
+            .on("click", function () {
+              const $img = $(this);
+              $("#imageModalLabel").text($img.data("descPrimaria"));
+              $("#modalImage").attr("src", $img.attr("src"));
+              $("#modalDescSecundaria").text($img.data("descSecundaria"));
+            });
 
           fetched += data.length;
 
