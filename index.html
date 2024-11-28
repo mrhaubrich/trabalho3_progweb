@@ -22,6 +22,12 @@
       body.dark-mode {
         background-color: #333;
         color: #fff;
+        min-height: 100vh;
+      }
+
+      #loading {
+        padding: 20px;
+        margin-top: 20px;
       }
     </style>
 
@@ -39,20 +45,17 @@
     ></script>
   </head>
   <body class="dark-mode">
-    <div class="container">
+    <div class="container-fluid px-5">
       <div class="mt-5 mx-muito">
         <h1>Discos</h1>
-        <div class="grid gap-3">
-          <div id="image-container" class="row"></div>
-        </div>
-      </div>
-
-      <div
-        id="loading"
-        class="d-flex row w-100 justify-content-center align-items-center"
-      >
-        <div class="spinner-border text-primary" role="status">
-          <span class="visually-hidden">Loading...</span>
+        <div
+          id="image-container"
+          class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-4"
+        ></div>
+        <div id="loading" class="row justify-content-center">
+          <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Loading...</span>
+          </div>
         </div>
       </div>
     </div>
@@ -73,7 +76,10 @@
     <script>
       $(document).ready(async function () {
         const url = "https://ucsdiscosapi.azurewebsites.net";
-        var token = "";
+        let token = "";
+        const quantidade = 12;
+        let fetched = 0;
+        let fullyLoaded = false;
 
         async function autenticar() {
           const endpoint = "Discos/autenticar";
@@ -107,7 +113,7 @@
           }
         }
 
-        async function discosRecords(numeroInicio = 1, quantidade = 12) {
+        async function getDiscos(numeroInicio = 1, quantidade = 12) {
           loading(true);
           if (!token) {
             console.log("Token não encontrado. Autentique primeiro.");
@@ -126,7 +132,25 @@
           );
 
           if (!response.ok) {
-            // TODO(marhaubrich): Tratar o erro de forma mais adequada
+            const errorText = await response.text();
+            if (
+              errorText.includes("maior do que a quantidade de registros") &&
+              quantidade > 1
+            ) {
+              getDiscos(1, quantidade - 1);
+              return;
+            }
+            if (
+              errorText.includes("maior do que a quantidade de registros") ||
+              errorText.includes(
+                "número de início informado esta fora do intervalo permitido."
+              )
+            ) {
+              console.log("Todos os discos foram carregados");
+              loading(false);
+              fullyLoaded = true;
+              return;
+            }
             console.log("Erro ao buscar os discos");
             loading(false);
             return;
@@ -149,11 +173,34 @@
             $("#image-container").append($imageDiv);
           });
 
+          fetched += data.length;
+
           loading(false);
         }
 
+        async function getNextPage() {
+          const numeroInicio = fetched + 1;
+          await getDiscos(numeroInicio, quantidade);
+        }
+
         await autenticar();
-        await discosRecords();
+        await getDiscos();
+
+        $(window).scroll(function () {
+          if (fullyLoaded) {
+            return;
+          }
+          if (
+            $(window).scrollTop() + $(window).height() >
+            $(document).height() - 100 // Trigger 100px before bottom
+          ) {
+            // Prevent multiple simultaneous calls
+            if (!$("#loading").hasClass("d-none")) {
+              return;
+            }
+            getNextPage();
+          }
+        });
       });
     </script>
   </body>
