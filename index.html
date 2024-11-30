@@ -33,9 +33,15 @@
   <!-- Theme Color for browsers -->
   <meta name="theme-color" content="#333333" />
 
+  <!-- Preconnect to external domains -->
+  <link rel="preconnect" href="https://cdn.jsdelivr.net">
+  <link rel="preconnect" href="https://code.jquery.com">
+  <link rel="preconnect" href="https://ucsdiscosapi.azurewebsites.net">
+
   <!-- Preload critical resources -->
   <link rel="preload" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" as="style"
-    integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous" />
+    integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous"
+    onload="this.onload=null;this.rel='stylesheet'">
   <link rel="preload" href="https://code.jquery.com/jquery-3.7.1.min.js" as="script"
     integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous" />
   <link rel="preload" href="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js" as="script"
@@ -46,6 +52,21 @@
   <!-- Existing stylesheet links with additional attributes -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"
     integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+
+  <!-- Critical CSS inline -->
+  <style>
+    /* Critical rendering path styles */
+    body.dark-mode {
+      background-color: #333;
+      color: #fff;
+      min-height: 100vh;
+    }
+
+    #loading {
+      padding: 20px;
+      margin-top: 20px;
+    }
+  </style>
 
   <style>
     .mx-muito {
@@ -196,15 +217,15 @@
     }
   </style>
 
-  <script src="https://code.jquery.com/jquery-3.7.1.min.js"
-    integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous"></script>
 
+  <!-- Load other scripts after jQuery with defer -->
   <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js"
     integrity="sha384-I7E8VVD/ismYTF4hNIPjVp/Zjvgyol6VFvRkX/vR+Vc4jQkC+hVqc2pM8ODewa9r" crossorigin="anonymous"
     defer></script>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.min.js"
     integrity="sha384-0pUGZvbkm6XF6gxjEnlmuGrJXVbNuzT9qBBavbLwCsOGabYfZo0T0to5eqruptLy" crossorigin="anonymous"
     defer></script>
+
 </head>
 
 <body class="dark-mode" itemscope itemtype="http://schema.org/WebPage">
@@ -223,7 +244,7 @@
   <!-- #region Templates -->
   <template id="image-template">
     <div class="col-12 col-md-3 rounded-3" id>
-      <img class="rounded-3 mb-3 clickable-image" src alt style="
+      <img class="rounded-3 mb-3 clickable-image" loading="lazy" decoding="async" src alt style="
             object-fit: cover;
             aspect-ratio: 1/1;
             width: 100%;
@@ -278,368 +299,413 @@
       <path d="M8 4.5l-5 5h10l-5-5z" />
     </svg>
   </button>
+  <!-- Load jQuery first without defer -->
+  <script src="https://code.jquery.com/jquery-3.7.1.min.js"
+    integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous" defer></script>
 
   <script>
-    $(document).ready(async function () {
-      const baseUrl = "https://ucsdiscosapi.azurewebsites.net";
-      let token = "";
-      const quantidade = 12;
-      let fetched = 0;
-      let fullyLoaded = false;
+    document.onreadystatechange = function () {
+      if (document.readyState === 'complete') {
+        $(document).ready(async function () {
+          async function optimizeImage(base64Image) {
+            return new Promise((resolve) => {
+              const img = new Image();
+              img.onload = () => {
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
 
-      // Replace the old tooltip initialization with this
-      const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]');
-      const tooltipList = [...tooltipTriggerList].map(el => new bootstrap.Tooltip(el));
+                // Set max dimensions
+                const maxWidth = 800;
+                const maxHeight = 800;
 
-      // Add these variables at the top with other declarations
-      let isScrolling = false;
-      let scrollTimeout;
-      let touchStartY;
+                let width = img.width;
+                let height = img.height;
 
-      async function autenticar() {
-        const endpoint = "Discos/autenticar";
-        const url_autenticar = `${baseUrl}/${endpoint}`;
+                // Calculate new dimensions while maintaining aspect ratio
+                if (width > height) {
+                  if (width > maxWidth) {
+                    height *= maxWidth / width;
+                    width = maxWidth;
+                  }
+                } else {
+                  if (height > maxHeight) {
+                    width *= maxHeight / height;
+                    height = maxHeight;
+                  }
+                }
 
-        const response = await fetch(url_autenticar, {
-          method: "POST",
-          headers: {
-            ChaveApi: "8175fA5f6098c5301022f475da32a2aa",
-            accept: "*/*",
-          },
-        });
+                canvas.width = width;
+                canvas.height = height;
 
-        if (!response.ok) {
-          // TODO(marhaubrich): Tratar o erro de forma mais adequada
-          console.log("Erro ao autenticar");
-          return;
-        }
-
-        token = await response.text();
-      }
-
-      function loading(active) {
-        const loading = $("#loading");
-        if (active) {
-          loading.toggleClass("d-flex", true);
-          loading.toggleClass("d-none", false);
-        } else {
-          loading.toggleClass("d-flex", false);
-          loading.toggleClass("d-none", true);
-        }
-      }
-
-      function clearModal() {
-        const $modalImage = $("#modalImage");
-        $modalImage.attr("src", "").attr("alt", "");
-
-        const $modalTitle = $("#imageModalLabel");
-        $modalTitle.text("");
-
-        const $modalDescSecundaria = $("#modalDescSecundaria");
-        $modalDescSecundaria.text("");
-      }
-
-      function modalLoading(loading, isError = false) {
-        const $modalLoading = $("#modal-loading");
-        const $modalHeader = $("#modal-header");
-        const $modalBody = $("#modal-body");
-        const $modalFooter = $("#modal-footer");
-        const $modalError = $("#modal-error");
-
-        function show($element, active, flex = false) {
-          $element.toggleClass("d-none", !active);
-          $element.toggleClass("d-flex", active && flex);
-          $element.toggleClass("d-block", active && !flex);
-          if (active) {
-            $element.addClass("fade-in");
-            setTimeout(() => $element.addClass("show"), 10);
-          } else {
-            $element.removeClass("show");
-            setTimeout(() => $element.removeClass("fade-in"), 500);
+                // Draw and compress
+                ctx.drawImage(img, 0, 0, width, height);
+                resolve(canvas.toDataURL('image/jpeg', 0.8));
+              };
+              img.src = base64Image;
+            });
           }
-        }
 
-        show($modalLoading, loading && !isError, true);
-        show($modalError, isError, true);
-        show($modalHeader, !loading && !isError, true);
-        show($modalBody, !loading && !isError);
-        show($modalFooter, !loading && !isError, true);
-      }
+          const baseUrl = "https://ucsdiscosapi.azurewebsites.net";
+          let token = "";
+          const quantidade = 12;
+          let fetched = 0;
+          let fullyLoaded = false;
 
-      async function setModalData($img) {
-        clearModal();
-        modalLoading(true);
-        const id = $img.parent().attr("id");
+          // Replace the old tooltip initialization with this
+          const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]');
+          const tooltipList = [...tooltipTriggerList].map(el => new bootstrap.Tooltip(el));
 
-        // get data from API
-        const endpoint = `Discos/record`;
+          // Add these variables at the top with other declarations
+          let isScrolling = false;
+          let scrollTimeout;
+          let touchStartY;
 
-        const url = `${baseUrl}/${endpoint}?numero=${id}`;
-        const response = await fetch(url, {
-          method: "GET",
-          headers: {
-            TokenApiUCS: token,
-            accept: "*/*",
-          },
-        });
+          async function autenticar() {
+            const endpoint = "Discos/autenticar";
+            const url_autenticar = `${baseUrl}/${endpoint}`;
 
-        if (!response.ok) {
-          console.error("Erro ao buscar os dados do disco");
-          modalLoading(false, true);
-          return;
-        }
+            const response = await fetch(url_autenticar, {
+              method: "POST",
+              headers: {
+                ChaveApi: "8175fA5f6098c5301022f475da32a2aa",
+                accept: "*/*",
+              },
+            });
 
-        const data = await response.json();
-        const base64Image = `data:image/png;base64,${data.imagemEmBase64}`;
-        const descricaoPrimaria = data.descricaoPrimaria;
-        const descricaoSecundaria = data.descricaoSecundaria;
-
-        const $modalImage = $("#modalImage");
-        $modalImage.attr("src", base64Image).attr("alt", descricaoPrimaria);
-
-        const $modalTitle = $("#imageModalLabel");
-        $modalTitle.text(descricaoPrimaria);
-
-        const $modalDescSecundaria = $("#modalDescSecundaria");
-        $modalDescSecundaria.text(descricaoSecundaria);
-
-        modalLoading(false);
-      }
-
-      function openModal($img) {
-        setModalData($img);
-        $("#imageModal").modal("show");
-      }
-
-      // Replace the click handler section with this improved version
-      function attachImageHandlers() {
-        $(".clickable-image")
-          .off("click touchstart touchend")
-          .on("touchstart", function (e) {
-            touchStartY = e.originalEvent.touches[0].clientY;
-          })
-          .on("touchend", function (e) {
-            e.preventDefault();
-            const touchEndY = e.originalEvent.changedTouches[0].clientY;
-            const touchDiff = Math.abs(touchEndY - touchStartY);
-
-            if (touchDiff < 10 && !isScrolling) { // Only trigger if it's a tap, not a scroll
-              const $img = $(this);
-              openModal($img);
+            if (!response.ok) {
+              // TODO(marhaubrich): Tratar o erro de forma mais adequada
+              console.log("Erro ao autenticar");
+              return;
             }
-          })
-          .on("click", function (e) {
-            if (!isScrolling) {
-              const $img = $(this);
-              openModal($img);
+
+            token = await response.text();
+          }
+
+          function loading(active) {
+            const loading = $("#loading");
+            if (active) {
+              loading.toggleClass("d-flex", true);
+              loading.toggleClass("d-none", false);
+            } else {
+              loading.toggleClass("d-flex", false);
+              loading.toggleClass("d-none", true);
+            }
+          }
+
+          function clearModal() {
+            const $modalImage = $("#modalImage");
+            $modalImage.attr("src", "").attr("alt", "");
+
+            const $modalTitle = $("#imageModalLabel");
+            $modalTitle.text("");
+
+            const $modalDescSecundaria = $("#modalDescSecundaria");
+            $modalDescSecundaria.text("");
+          }
+
+          function modalLoading(loading, isError = false) {
+            const $modalLoading = $("#modal-loading");
+            const $modalHeader = $("#modal-header");
+            const $modalBody = $("#modal-body");
+            const $modalFooter = $("#modal-footer");
+            const $modalError = $("#modal-error");
+
+            function show($element, active, flex = false) {
+              $element.toggleClass("d-none", !active);
+              $element.toggleClass("d-flex", active && flex);
+              $element.toggleClass("d-block", active && !flex);
+              if (active) {
+                $element.addClass("fade-in");
+                setTimeout(() => $element.addClass("show"), 10);
+              } else {
+                $element.removeClass("show");
+                setTimeout(() => $element.removeClass("fade-in"), 500);
+              }
+            }
+
+            show($modalLoading, loading && !isError, true);
+            show($modalError, isError, true);
+            show($modalHeader, !loading && !isError, true);
+            show($modalBody, !loading && !isError);
+            show($modalFooter, !loading && !isError, true);
+          }
+
+          async function setModalData($img) {
+            clearModal();
+            modalLoading(true);
+            const id = $img.parent().attr("id");
+
+            // get data from API
+            const endpoint = `Discos/record`;
+
+            const url = `${baseUrl}/${endpoint}?numero=${id}`;
+            const response = await fetch(url, {
+              method: "GET",
+              headers: {
+                TokenApiUCS: token,
+                accept: "*/*",
+              },
+            });
+
+            if (!response.ok) {
+              console.error("Erro ao buscar os dados do disco");
+              modalLoading(false, true);
+              return;
+            }
+
+            const data = await response.json();
+            const base64Image = `data:image/png;base64,${data.imagemEmBase64}`;
+            const descricaoPrimaria = data.descricaoPrimaria;
+            const descricaoSecundaria = data.descricaoSecundaria;
+
+            const $modalImage = $("#modalImage");
+            $modalImage.attr("src", base64Image).attr("alt", descricaoPrimaria);
+
+            const $modalTitle = $("#imageModalLabel");
+            $modalTitle.text(descricaoPrimaria);
+
+            const $modalDescSecundaria = $("#modalDescSecundaria");
+            $modalDescSecundaria.text(descricaoSecundaria);
+
+            modalLoading(false);
+          }
+
+          function openModal($img) {
+            setModalData($img);
+            $("#imageModal").modal("show");
+          }
+
+          // Replace the click handler section with this improved version
+          function attachImageHandlers() {
+            $(".clickable-image")
+              .off("click touchstart touchend")
+              .on("touchstart", function (e) {
+                touchStartY = e.originalEvent.touches[0].clientY;
+              })
+              .on("touchend", function (e) {
+                e.preventDefault();
+                const touchEndY = e.originalEvent.changedTouches[0].clientY;
+                const touchDiff = Math.abs(touchEndY - touchStartY);
+
+                if (touchDiff < 10 && !isScrolling) { // Only trigger if it's a tap, not a scroll
+                  const $img = $(this);
+                  openModal($img);
+                }
+              })
+              .on("click", function (e) {
+                if (!isScrolling) {
+                  const $img = $(this);
+                  openModal($img);
+                }
+              });
+          }
+
+          // Update the getDiscos function to use the new handler
+          async function getDiscos(numeroInicio = 1, quantidade = 12) {
+            loading(true);
+            if (!token) {
+              console.log("Token não encontrado. Autentique primeiro.");
+              loading(false);
+              return;
+            }
+            const response = await fetch(
+              `${baseUrl}/Discos/records?numeroInicio=${numeroInicio}&quantidade=${quantidade}`,
+              {
+                method: "GET",
+                headers: {
+                  TokenApiUCS: token,
+                  accept: "*/*",
+                },
+              }
+            );
+
+            if (!response.ok) {
+              const errorText = await response.text();
+              if (
+                errorText.includes("maior do que a quantidade de registros") &&
+                quantidade > 1
+              ) {
+                getDiscos(1, quantidade - 1);
+                return;
+              }
+              if (
+                errorText.includes("maior do que a quantidade de registros") ||
+                errorText.includes(
+                  "número de início informado esta fora do intervalo permitido."
+                )
+              ) {
+                console.log("Todos os discos foram carregados");
+                loading(false);
+                fullyLoaded = true;
+                return;
+              }
+              console.log("Erro ao buscar os discos");
+              loading(false);
+              return;
+            }
+
+            const data = await response.json();
+
+            for (const item of data) {
+              const base64Image = `data:image/png;base64,${item.imagemEmBase64}`;
+              const optimizedImage = await optimizeImage(base64Image);
+
+              const $imageTemplate = $("#image-template").html();
+              const $imageDiv = $($imageTemplate);
+              $imageDiv.attr("id", item.id);
+
+              const $img = $imageDiv.find("img");
+              $img
+                .attr("src", optimizedImage)
+                .attr("alt", item.descricaoPrimaria)
+                .data("descPrimaria", item.descricaoPrimaria)
+                .data("descSecundaria", item.descricaoSecundaria);
+
+              $("#image-container").append($imageDiv);
+            }
+
+            attachImageHandlers();
+
+            fetched += data.length;
+
+            loading(false);
+          }
+
+          async function getNextPage() {
+            const numeroInicio = fetched + 1;
+            await getDiscos(numeroInicio, quantidade);
+          }
+
+          await autenticar();
+          await getDiscos();
+
+          // Improve scroll performance
+          $(window).scroll(function () {
+            isScrolling = true;
+            clearTimeout(scrollTimeout);
+
+            scrollTimeout = setTimeout(function () {
+              isScrolling = false;
+            }, 150); // Reset scroll state after scrolling stops
+
+            // Rest of your existing scroll logic
+            if (fullyLoaded) return;
+
+            const scrollPosition = $(window).scrollTop() + $(window).height();
+            const threshold = $(document).height() - 100;
+
+            if (scrollPosition > threshold) {
+              if (!$("#loading").hasClass("d-none")) return;
+              getNextPage();
+            }
+
+            // Scroll to top button visibility
+            const mustShow = $(window).scrollTop() > 300;
+            scrollToTopButton.toggleClass("visible", mustShow);
+            setTimeout(() => {
+              scrollToTopButton.toggleClass("d-none", !mustShow);
+              scrollToTopButton.toggleClass("d-flex", mustShow);
+            }, 300);
+          });
+
+          const scrollToTopButton = $("#scroll-to-top");
+
+          // Smooth scroll with better performance
+          scrollToTopButton
+            .on('touchstart click', function (e) {
+              e.preventDefault();
+              const tooltip = bootstrap.Tooltip.getInstance(this);
+              if (tooltip) {
+                tooltip.hide();
+              }
+              $('html, body').animate({ scrollTop: 0 }, 'fast');
+            })
+            .on('touchend', function (e) {
+              e.preventDefault();
+              const tooltip = bootstrap.Tooltip.getInstance(this);
+              if (tooltip) {
+                tooltip.hide();
+              }
+            });
+
+          // Re-enable tooltips after they're hidden
+          scrollToTopButton.on('hidden.bs.tooltip', function () {
+            const tooltip = bootstrap.Tooltip.getInstance(this);
+            if (tooltip) {
+              tooltip.enable();
             }
           });
-      }
 
-      // Update the getDiscos function to use the new handler
-      async function getDiscos(numeroInicio = 1, quantidade = 12) {
-        loading(true);
-        if (!token) {
-          console.log("Token não encontrado. Autentique primeiro.");
-          loading(false);
-          return;
-        }
-        const response = await fetch(
-          `${baseUrl}/Discos/records?numeroInicio=${numeroInicio}&quantidade=${quantidade}`,
-          {
-            method: "GET",
-            headers: {
-              TokenApiUCS: token,
-              accept: "*/*",
-            },
+          function isNearBottom() {
+            const windowHeight = $(window).height();
+            const documentHeight = $(document).height();
+            const scrollTop = $(window).scrollTop();
+            const buffer = window.innerWidth <= 768 ? 1000 : 100; // Larger buffer for mobile
+
+            return (windowHeight + scrollTop + buffer) >= documentHeight;
           }
-        );
 
-        if (!response.ok) {
-          const errorText = await response.text();
-          if (
-            errorText.includes("maior do que a quantidade de registros") &&
-            quantidade > 1
-          ) {
-            getDiscos(1, quantidade - 1);
-            return;
+          let loadingNextPage = false;
+          async function tryLoadNextPage() {
+            if (fullyLoaded || loadingNextPage || $("#loading").hasClass("d-none") === false) {
+              return;
+            }
+
+            loadingNextPage = true;
+            try {
+              await getNextPage();
+            } finally {
+              loadingNextPage = false;
+            }
           }
-          if (
-            errorText.includes("maior do que a quantidade de registros") ||
-            errorText.includes(
-              "número de início informado esta fora do intervalo permitido."
-            )
-          ) {
-            console.log("Todos os discos foram carregados");
-            loading(false);
-            fullyLoaded = true;
-            return;
-          }
-          console.log("Erro ao buscar os discos");
-          loading(false);
-          return;
-        }
 
-        const data = await response.json();
+          // Replace the scroll handler with this improved version
+          let scrollThrottle;
+          $(window).on('scroll touchmove', function () {
+            isScrolling = true;
+            clearTimeout(scrollTimeout);
+            clearTimeout(scrollThrottle);
 
-        data.forEach((item) => {
-          const base64Image = `data:image/png;base64,${item.imagemEmBase64}`;
-          const descricaoPrimaria = item.descricaoPrimaria;
-          const descricaoSecundaria = item.descricaoSecundaria;
+            scrollThrottle = setTimeout(function () {
+              if (isNearBottom()) {
+                tryLoadNextPage();
+              }
 
-          const $imageTemplate = $("#image-template").html();
-          const $imageDiv = $($imageTemplate);
-          $imageDiv.attr("id", item.id);
+              // Scroll to top button visibility
+              const mustShow = $(window).scrollTop() > 300;
+              scrollToTopButton.toggleClass("visible", mustShow);
+              setTimeout(() => {
+                scrollToTopButton.toggleClass("d-none", !mustShow);
+                scrollToTopButton.toggleClass("d-flex", mustShow);
+              }, 300);
+            }, 100); // Throttle scroll events
 
-          const $img = $imageDiv.find("img");
-          $img
-            .attr("src", base64Image)
-            .attr("alt", descricaoPrimaria)
-            .data("descPrimaria", descricaoPrimaria)
-            .data("descSecundaria", descricaoSecundaria);
+            scrollTimeout = setTimeout(function () {
+              isScrolling = false;
+            }, 150);
+          });
 
-          $("#image-container").append($imageDiv);
+          // Add intersection observer as backup for scroll detection
+          const options = {
+            root: null,
+            rootMargin: '0px',
+            threshold: 0.1
+          };
+
+          const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+              if (entry.isIntersecting) {
+                tryLoadNextPage();
+              }
+            });
+          }, options);
+
+          // Observe the loading element
+          observer.observe(document.getElementById('loading'));
         });
-
-        attachImageHandlers();
-
-        fetched += data.length;
-
-        loading(false);
       }
+    };
 
-      async function getNextPage() {
-        const numeroInicio = fetched + 1;
-        await getDiscos(numeroInicio, quantidade);
-      }
-
-      await autenticar();
-      await getDiscos();
-
-      // Improve scroll performance
-      $(window).scroll(function () {
-        isScrolling = true;
-        clearTimeout(scrollTimeout);
-
-        scrollTimeout = setTimeout(function () {
-          isScrolling = false;
-        }, 150); // Reset scroll state after scrolling stops
-
-        // Rest of your existing scroll logic
-        if (fullyLoaded) return;
-
-        const scrollPosition = $(window).scrollTop() + $(window).height();
-        const threshold = $(document).height() - 100;
-
-        if (scrollPosition > threshold) {
-          if (!$("#loading").hasClass("d-none")) return;
-          getNextPage();
-        }
-
-        // Scroll to top button visibility
-        const mustShow = $(window).scrollTop() > 300;
-        scrollToTopButton.toggleClass("visible", mustShow);
-        setTimeout(() => {
-          scrollToTopButton.toggleClass("d-none", !mustShow);
-          scrollToTopButton.toggleClass("d-flex", mustShow);
-        }, 300);
-      });
-
-      const scrollToTopButton = $("#scroll-to-top");
-
-      // Smooth scroll with better performance
-      scrollToTopButton
-        .on('touchstart click', function (e) {
-          e.preventDefault();
-          const tooltip = bootstrap.Tooltip.getInstance(this);
-          if (tooltip) {
-            tooltip.hide();
-          }
-          $('html, body').animate({ scrollTop: 0 }, 'fast');
-        })
-        .on('touchend', function (e) {
-          e.preventDefault();
-          const tooltip = bootstrap.Tooltip.getInstance(this);
-          if (tooltip) {
-            tooltip.hide();
-          }
-        });
-
-      // Re-enable tooltips after they're hidden
-      scrollToTopButton.on('hidden.bs.tooltip', function () {
-        const tooltip = bootstrap.Tooltip.getInstance(this);
-        if (tooltip) {
-          tooltip.enable();
-        }
-      });
-
-      function isNearBottom() {
-        const windowHeight = $(window).height();
-        const documentHeight = $(document).height();
-        const scrollTop = $(window).scrollTop();
-        const buffer = window.innerWidth <= 768 ? 1000 : 100; // Larger buffer for mobile
-
-        return (windowHeight + scrollTop + buffer) >= documentHeight;
-      }
-
-      let loadingNextPage = false;
-      async function tryLoadNextPage() {
-        if (fullyLoaded || loadingNextPage || $("#loading").hasClass("d-none") === false) {
-          return;
-        }
-
-        loadingNextPage = true;
-        try {
-          await getNextPage();
-        } finally {
-          loadingNextPage = false;
-        }
-      }
-
-      // Replace the scroll handler with this improved version
-      let scrollThrottle;
-      $(window).on('scroll touchmove', function () {
-        isScrolling = true;
-        clearTimeout(scrollTimeout);
-        clearTimeout(scrollThrottle);
-
-        scrollThrottle = setTimeout(function () {
-          if (isNearBottom()) {
-            tryLoadNextPage();
-          }
-
-          // Scroll to top button visibility
-          const mustShow = $(window).scrollTop() > 300;
-          scrollToTopButton.toggleClass("visible", mustShow);
-          setTimeout(() => {
-            scrollToTopButton.toggleClass("d-none", !mustShow);
-            scrollToTopButton.toggleClass("d-flex", mustShow);
-          }, 300);
-        }, 100); // Throttle scroll events
-
-        scrollTimeout = setTimeout(function () {
-          isScrolling = false;
-        }, 150);
-      });
-
-      // Add intersection observer as backup for scroll detection
-      const options = {
-        root: null,
-        rootMargin: '0px',
-        threshold: 0.1
-      };
-
-      const observer = new IntersectionObserver((entries) => {
-        entries.forEach(entry => {
-          if (entry.isIntersecting) {
-            tryLoadNextPage();
-          }
-        });
-      }, options);
-
-      // Observe the loading element
-      observer.observe(document.getElementById('loading'));
-    });
   </script>
 </body>
 
