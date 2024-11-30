@@ -165,7 +165,8 @@
   </div>
   <!-- #endregion -->
 
-  <button id="scroll-to-top" title="Voltar ao topo" class="d-flex justify-content-center align-items-center">
+  <button id="scroll-to-top" title="Voltar ao topo" class="d-flex justify-content-center align-items-center"
+    data-bs-toggle="tooltip" data-bs-placement="left">
     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
       <path d="M8 4.5l-5 5h10l-5-5z" />
     </svg>
@@ -178,6 +179,12 @@
       const quantidade = 12;
       let fetched = 0;
       let fullyLoaded = false;
+
+      var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+      var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+      });
+
 
       async function autenticar() {
         const endpoint = "Discos/autenticar";
@@ -398,14 +405,18 @@
       const scrollToTopButton = $("#scroll-to-top");
 
       $(window).scroll(function () {
-        if ($(this).scrollTop() > 300) {
-          scrollToTopButton.addClass('visible');
-        } else {
-          scrollToTopButton.removeClass('visible');
-        }
+        const mustShow = $(this).scrollTop() > 300;
+
+        scrollToTopButton.toggleClass("visible", mustShow);
+
+        setTimeout(() => {
+          scrollToTopButton.toggleClass("d-none", !mustShow);
+          scrollToTopButton.toggleClass("d-flex", mustShow);
+        }, 300);
       });
 
       scrollToTopButton.click(function () {
+        $('[data-bs-toggle="tooltip"]').tooltip('hide');
         $('html, body').animate({ scrollTop: 0 }, 'fast');
         return false;
       });
