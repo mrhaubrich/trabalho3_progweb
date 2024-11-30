@@ -1,285 +1,363 @@
 <!DOCTYPE html>
 <html lang="pt-br">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Tela de Carregamento</title>
 
-    <link
-      href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css"
-      rel="stylesheet"
-    />
-    <style>
-      .mx-muito {
-        padding: 0px 100px;
-      }
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tela de Carregamento</title>
 
-      /* Estilo das imagens */
-      #image-container img {
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-      }
+  <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet" />
+  <style>
+    .mx-muito {
+      padding: 0px 100px;
+    }
 
-      body.dark-mode {
-        background-color: #333;
-        color: #fff;
-        min-height: 100vh;
-      }
+    /* Estilo das imagens */
+    #image-container img {
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    }
 
-      #loading {
-        padding: 20px;
-        margin-top: 20px;
-      }
+    body.dark-mode {
+      background-color: #333;
+      color: #fff;
+      min-height: 100vh;
+    }
 
-      /* Dark theme modal styles */
-      .dark-mode .modal-content {
-        background-color: #2b2b2b;
-        border: 1px solid #444;
-      }
+    #loading {
+      padding: 20px;
+      margin-top: 20px;
+    }
 
-      .dark-mode .modal-header {
-        border-bottom: 1px solid #444;
-      }
+    /* Dark theme modal styles */
+    .dark-mode .modal-content {
+      background-color: #2b2b2b;
+      border: 1px solid #444;
+    }
 
-      .dark-mode .modal-footer {
-        border-top: 1px solid #444;
-      }
+    .dark-mode .modal-header {
+      border-bottom: 1px solid #444;
+    }
 
-      .dark-mode .btn-close {
-        filter: invert(1) grayscale(100%) brightness(200%);
-      }
+    .dark-mode .modal-footer {
+      border-top: 1px solid #444;
+    }
 
-      .dark-mode .modal-title {
-        color: #fff;
-      }
-    </style>
+    .dark-mode .btn-close {
+      filter: invert(1) grayscale(100%) brightness(200%);
+    }
 
-    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
-    <link
-      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
-      rel="stylesheet"
-      integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH"
-      crossorigin="anonymous"
-    />
-    <script
-      src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
-      integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
-      crossorigin="anonymous"
-    ></script>
-  </head>
-  <body class="dark-mode">
-    <div class="container-fluid px-5">
-      <div class="mt-5 mx-muito">
-        <h1>Discos</h1>
-        <div
-          id="image-container"
-          class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-4"
-        ></div>
-        <div id="loading" class="row justify-content-center">
-          <div class="spinner-border text-primary" role="status">
-            <span class="visually-hidden">Loading...</span>
-          </div>
+    .dark-mode .modal-title {
+      color: #fff;
+    }
+
+    .fade-in {
+      opacity: 0;
+      transition: opacity 0.5s ease-in;
+    }
+
+    .fade-in.show {
+      opacity: 1;
+    }
+  </style>
+
+  <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"
+    integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous" />
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
+    integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
+    crossorigin="anonymous"></script>
+</head>
+
+<body class="dark-mode">
+  <div class="container-fluid px-5">
+    <div class="mt-5 mx-muito">
+      <h1>Discos</h1>
+      <div id="image-container" class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-4"></div>
+      <div id="loading" class="row justify-content-center">
+        <div class="spinner-border text-primary" role="status">
+          <span class="visually-hidden">Loading...</span>
         </div>
       </div>
     </div>
+  </div>
 
-    <!-- #region Templates -->
-    <template id="image-template">
-      <div class="col-12 col-md-3 rounded">
-        <img
-          class="rounded-lg mb-3 clickable-image"
-          src=""
-          alt=""
-          style="
+  <!-- #region Templates -->
+  <template id="image-template">
+    <div class="col-12 col-md-3 rounded" id>
+      <img class="rounded-lg mb-3 clickable-image" src alt style="
             object-fit: cover;
             aspect-ratio: 1/1;
             width: 100%;
             cursor: pointer;
-          "
-          data-bs-toggle="modal"
-          data-bs-target="#imageModal"
-        />
-      </div>
-    </template>
+          " />
+    </div>
+  </template>
 
-    <!-- Modal -->
-    <div
-      class="modal fade"
-      id="imageModal"
-      tabindex="-1"
-      aria-labelledby="imageModalLabel"
-      aria-hidden="true"
-    >
-      <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h5 class="modal-title text-white" id="imageModalLabel"></h5>
-            <button
-              type="button"
-              class="btn-close"
-              data-bs-dismiss="modal"
-              aria-label="Close"
-            ></button>
+  <!-- Modal -->
+  <div class="modal fade" id="imageModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <!-- loading -->
+        <div class="modal-body d-flex justify-content-center" id="modal-loading">
+          <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Loading...</span>
           </div>
-          <div class="modal-body text-white">
-            <img class="w-100 rounded-lg mb-3" id="modalImage" src="" alt="" />
-            <p id="modalDescSecundaria" class="mt-2"></p>
+        </div>
+        <!-- error -->
+        <div class="modal-body d-none" id="modal-error">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor"
+            class="bi bi-exclamation-triangle-fill flex-shrink-0 me-2 text-danger" viewBox="0 0 16 16">
+            <path
+              d="M8.982 1.566a1.13 1.13 0 0 0-1.96 0L.165 13.233c-.457.778.091 1.767.98 1.767h13.713c.889 0 1.438-.99.98-1.767L8.982 1.566zM8 5c.535 0 .954.462.9.995l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 5.995A.905.905 0 0 1 8 5zm.002 6a1 1 0 1 1 0 2 1 1 0 0 1 0-2z" />
+          </svg>
+          <div>
+            Ops! Ocorreu um erro ao carregar os detalhes do disco.
           </div>
-          <div class="modal-footer">
-            <button
-              type="button"
-              class="btn btn-secondary"
-              data-bs-dismiss="modal"
-            >
-              Fechar
-            </button>
-          </div>
+        </div>
+        <div class="modal-header" id="modal-header">
+          <h5 class="modal-title text-white" id="imageModalLabel"></h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body text-white" id="modal-body">
+          <img class="w-100 rounded-lg mb-3" id="modalImage" src alt />
+          <p id="modalDescSecundaria" class="mt-2"></p>
+        </div>
+        <div class="modal-footer" id="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+            Fechar
+          </button>
         </div>
       </div>
     </div>
-    <!-- #endregion -->
+  </div>
+  </div>
+  <!-- #endregion -->
 
-    <script>
-      $(document).ready(async function () {
-        const url = "https://ucsdiscosapi.azurewebsites.net";
-        let token = "";
-        const quantidade = 12;
-        let fetched = 0;
-        let fullyLoaded = false;
+  <script>
+    $(document).ready(async function () {
+      const baseUrl = "https://ucsdiscosapi.azurewebsites.net";
+      let token = "";
+      const quantidade = 12;
+      let fetched = 0;
+      let fullyLoaded = false;
 
-        async function autenticar() {
-          const endpoint = "Discos/autenticar";
-          const url_autenticar = `${url}/${endpoint}`;
+      async function autenticar() {
+        const endpoint = "Discos/autenticar";
+        const url_autenticar = `${baseUrl}/${endpoint}`;
 
-          const response = await fetch(url_autenticar, {
-            method: "POST",
+        const response = await fetch(url_autenticar, {
+          method: "POST",
+          headers: {
+            ChaveApi: "8175fA5f6098c5301022f475da32a2aa",
+            accept: "*/*",
+          },
+        });
+
+        if (!response.ok) {
+          // TODO(marhaubrich): Tratar o erro de forma mais adequada
+          console.log("Erro ao autenticar");
+          return;
+        }
+
+        token = await response.text();
+      }
+
+      function loading(active) {
+        const loading = $("#loading");
+        if (active) {
+          loading.toggleClass("d-flex", true);
+          loading.toggleClass("d-none", false);
+        } else {
+          loading.toggleClass("d-flex", false);
+          loading.toggleClass("d-none", true);
+        }
+      }
+
+      function clearModal() {
+        const $modalImage = $("#modalImage");
+        $modalImage.attr("src", "").attr("alt", "");
+
+        const $modalTitle = $("#imageModalLabel");
+        $modalTitle.text("");
+
+        const $modalDescSecundaria = $("#modalDescSecundaria");
+        $modalDescSecundaria.text("");
+      }
+
+      function modalLoading(loading, isError = false) {
+        const $modalLoading = $("#modal-loading");
+        const $modalHeader = $("#modal-header");
+        const $modalBody = $("#modal-body");
+        const $modalFooter = $("#modal-footer");
+        const $modalError = $("#modal-error");
+
+        function show($element, active, flex = false) {
+          $element.toggleClass("d-none", !active);
+          $element.toggleClass("d-flex", active && flex);
+          $element.toggleClass("d-block", active && !flex);
+          if (active) {
+            $element.addClass("fade-in");
+            setTimeout(() => $element.addClass("show"), 10);
+          } else {
+            $element.removeClass("show");
+            setTimeout(() => $element.removeClass("fade-in"), 500);
+          }
+        }
+
+        show($modalLoading, loading && !isError, true);
+        show($modalError, isError, true);
+        show($modalHeader, !loading && !isError, true);
+        show($modalBody, !loading && !isError);
+        show($modalFooter, !loading && !isError, true);
+      }
+
+      async function setModalData($img) {
+        clearModal();
+        modalLoading(true);
+        const id = $img.parent().attr("id");
+
+        // get data from API
+        const endpoint = `Discos/record`;
+
+        const url = `${baseUrl}/${endpoint}?numero=${id}`;
+        const response = await fetch(url, {
+          method: "GET",
+          headers: {
+            TokenApiUCS: token,
+            accept: "*/*",
+          },
+        });
+
+        if (!response.ok) {
+          console.error("Erro ao buscar os dados do disco");
+          modalLoading(false, true);
+          return;
+        }
+
+        const data = await response.json();
+        const base64Image = `data:image/png;base64,${data.imagemEmBase64}`;
+        const descricaoPrimaria = data.descricaoPrimaria;
+        const descricaoSecundaria = data.descricaoSecundaria;
+
+        const $modalImage = $("#modalImage");
+        $modalImage.attr("src", base64Image).attr("alt", descricaoPrimaria);
+
+        const $modalTitle = $("#imageModalLabel");
+        $modalTitle.text(descricaoPrimaria);
+
+        const $modalDescSecundaria = $("#modalDescSecundaria");
+        $modalDescSecundaria.text(descricaoSecundaria);
+
+        modalLoading(false);
+      }
+
+      function openModal($img) {
+        setModalData($img);
+        $("#imageModal").modal("show");
+      }
+
+      async function getDiscos(numeroInicio = 1, quantidade = 12) {
+        loading(true);
+        if (!token) {
+          console.log("Token não encontrado. Autentique primeiro.");
+          loading(false);
+          return;
+        }
+        const response = await fetch(
+          `${baseUrl}/Discos/records?numeroInicio=${numeroInicio}&quantidade=${quantidade}`,
+          {
+            method: "GET",
             headers: {
-              ChaveApi: "8175fA5f6098c5301022f475da32a2aa",
+              TokenApiUCS: token,
               accept: "*/*",
             },
-          });
-
-          if (!response.ok) {
-            // TODO(marhaubrich): Tratar o erro de forma mais adequada
-            console.log("Erro ao autenticar");
-            return;
           }
+        );
 
-          token = await response.text();
-        }
-
-        function loading(active) {
-          const loading = $("#loading");
-          if (active) {
-            loading.toggleClass("d-flex", true);
-            loading.toggleClass("d-none", false);
-          } else {
-            loading.toggleClass("d-flex", false);
-            loading.toggleClass("d-none", true);
-          }
-        }
-
-        async function getDiscos(numeroInicio = 1, quantidade = 12) {
-          loading(true);
-          if (!token) {
-            console.log("Token não encontrado. Autentique primeiro.");
-            loading(false);
-            return;
-          }
-          const response = await fetch(
-            `https://ucsdiscosapi.azurewebsites.net/Discos/records?numeroInicio=${numeroInicio}&quantidade=${quantidade}`,
-            {
-              method: "GET",
-              headers: {
-                TokenApiUCS: token,
-                accept: "*/*",
-              },
-            }
-          );
-
-          if (!response.ok) {
-            const errorText = await response.text();
-            if (
-              errorText.includes("maior do que a quantidade de registros") &&
-              quantidade > 1
-            ) {
-              getDiscos(1, quantidade - 1);
-              return;
-            }
-            if (
-              errorText.includes("maior do que a quantidade de registros") ||
-              errorText.includes(
-                "número de início informado esta fora do intervalo permitido."
-              )
-            ) {
-              console.log("Todos os discos foram carregados");
-              loading(false);
-              fullyLoaded = true;
-              return;
-            }
-            console.log("Erro ao buscar os discos");
-            loading(false);
-            return;
-          }
-
-          const data = await response.json();
-
-          data.forEach((item) => {
-            const base64Image = `data:image/png;base64,${item.imagemEmBase64}`;
-            const descricaoPrimaria = item.descricaoPrimaria;
-            const descricaoSecundaria = item.descricaoSecundaria;
-
-            const $imageTemplate = $("#image-template").html();
-            const $imageDiv = $($imageTemplate);
-
-            const $img = $imageDiv.find("img");
-            $img
-              .attr("src", base64Image)
-              .attr("alt", descricaoPrimaria)
-              .data("descPrimaria", descricaoPrimaria)
-              .data("descSecundaria", descricaoSecundaria);
-
-            $("#image-container").append($imageDiv);
-          });
-
-          // Add click handler for images
-          $(".clickable-image")
-            .off("click")
-            .on("click", function () {
-              const $img = $(this);
-              $("#imageModalLabel").text($img.data("descPrimaria"));
-              $("#modalImage").attr("src", $img.attr("src"));
-              $("#modalDescSecundaria").text($img.data("descSecundaria"));
-            });
-
-          fetched += data.length;
-
-          loading(false);
-        }
-
-        async function getNextPage() {
-          const numeroInicio = fetched + 1;
-          await getDiscos(numeroInicio, quantidade);
-        }
-
-        await autenticar();
-        await getDiscos();
-
-        $(window).scroll(function () {
-          if (fullyLoaded) {
+        if (!response.ok) {
+          const errorText = await response.text();
+          if (
+            errorText.includes("maior do que a quantidade de registros") &&
+            quantidade > 1
+          ) {
+            getDiscos(1, quantidade - 1);
             return;
           }
           if (
-            $(window).scrollTop() + $(window).height() >
-            $(document).height() - 100 // Trigger 100px before bottom
+            errorText.includes("maior do que a quantidade de registros") ||
+            errorText.includes(
+              "número de início informado esta fora do intervalo permitido."
+            )
           ) {
-            // Prevent multiple simultaneous calls
-            if (!$("#loading").hasClass("d-none")) {
-              return;
-            }
-            getNextPage();
+            console.log("Todos os discos foram carregados");
+            loading(false);
+            fullyLoaded = true;
+            return;
           }
+          console.log("Erro ao buscar os discos");
+          loading(false);
+          return;
+        }
+
+        const data = await response.json();
+
+        data.forEach((item) => {
+          const base64Image = `data:image/png;base64,${item.imagemEmBase64}`;
+          const descricaoPrimaria = item.descricaoPrimaria;
+          const descricaoSecundaria = item.descricaoSecundaria;
+
+          const $imageTemplate = $("#image-template").html();
+          const $imageDiv = $($imageTemplate);
+          $imageDiv.attr("id", item.id);
+
+          const $img = $imageDiv.find("img");
+          $img
+            .attr("src", base64Image)
+            .attr("alt", descricaoPrimaria)
+            .data("descPrimaria", descricaoPrimaria)
+            .data("descSecundaria", descricaoSecundaria);
+
+          $("#image-container").append($imageDiv);
         });
+
+        // Add click handler for images
+        $(".clickable-image")
+          .off("click")
+          .on("click", function () {
+            const $img = $(this);
+            openModal($img);
+          });
+
+        fetched += data.length;
+
+        loading(false);
+      }
+
+      async function getNextPage() {
+        const numeroInicio = fetched + 1;
+        await getDiscos(numeroInicio, quantidade);
+      }
+
+      await autenticar();
+      await getDiscos();
+
+      $(window).scroll(function () {
+        if (fullyLoaded) {
+          return;
+        }
+        if (
+          $(window).scrollTop() + $(window).height() >
+          $(document).height() - 100 // Trigger 100px before bottom
+        ) {
+          // Prevent multiple simultaneous calls
+          if (!$("#loading").hasClass("d-none")) {
+            return;
+          }
+          getNextPage();
+        }
       });
-    </script>
-  </body>
+    });
+  </script>
+</body>
+
 </html>
