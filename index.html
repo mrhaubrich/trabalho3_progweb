@@ -9,12 +9,76 @@
   <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet" />
   <style>
     .mx-muito {
-      padding: 0px 100px;
+      padding: 0px 15px;
+    }
+
+    @media (min-width: 768px) {
+      .mx-muito {
+        padding: 0px 50px;
+      }
+    }
+
+    @media (min-width: 992px) {
+      .mx-muito {
+        padding: 0px 100px;
+      }
     }
 
     /* Estilo das imagens */
     #image-container img {
       box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+      width: 100%;
+      height: auto;
+      transition: transform 0.2s;
+    }
+
+    #image-container img:hover {
+      transform: scale(1.02);
+    }
+
+    @media (max-width: 576px) {
+      #image-container .col-12 {
+        padding: 10px;
+      }
+    }
+
+    /* Modal styles for mobile */
+    @media (max-width: 576px) {
+      .modal-dialog {
+        margin: 0.5rem;
+        max-width: none;
+      }
+
+      .modal-body {
+        padding: 1rem;
+      }
+    }
+
+    /* Scroll to top button adjustments */
+    #scroll-to-top {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      width: 40px;
+      height: 40px;
+      padding: 10px;
+      touch-action: manipulation;
+    }
+
+    @media (max-width: 576px) {
+      #scroll-to-top {
+        bottom: 15px;
+        right: 15px;
+        width: 35px;
+        height: 35px;
+      }
+    }
+
+    /* Touch-friendly adjustments */
+    @media (hover: none) {
+      .clickable-image {
+        -webkit-tap-highlight-color: transparent;
+      }
     }
 
     body.dark-mode {
@@ -373,6 +437,13 @@
             openModal($img);
           });
 
+        // Add touch event handling
+        $('.clickable-image').on('touchend', function (e) {
+          e.preventDefault();
+          const $img = $(this);
+          openModal($img);
+        });
+
         fetched += data.length;
 
         loading(false);
@@ -386,39 +457,42 @@
       await autenticar();
       await getDiscos();
 
+      // Improve scroll performance
+      let isScrolling;
       $(window).scroll(function () {
-        if (fullyLoaded) {
-          return;
-        }
-        if (
-          $(window).scrollTop() + $(window).height() >
-          $(document).height() - 100 // Trigger 100px before bottom
-        ) {
-          // Prevent multiple simultaneous calls
-          if (!$("#loading").hasClass("d-none")) {
-            return;
+        clearTimeout(isScrolling);
+
+        isScrolling = setTimeout(function () {
+          if (fullyLoaded) return;
+
+          const scrollPosition = $(window).scrollTop() + $(window).height();
+          const threshold = $(document).height() - 100;
+
+          if (scrollPosition > threshold) {
+            if (!$("#loading").hasClass("d-none")) return;
+            getNextPage();
           }
-          getNextPage();
-        }
+
+          // Scroll to top button visibility
+          const mustShow = $(window).scrollTop() > 300;
+          scrollToTopButton.toggleClass("visible", mustShow);
+          setTimeout(() => {
+            scrollToTopButton.toggleClass("d-none", !mustShow);
+            scrollToTopButton.toggleClass("d-flex", mustShow);
+          }, 300);
+        }, 100);
       });
 
       const scrollToTopButton = $("#scroll-to-top");
 
-      $(window).scroll(function () {
-        const mustShow = $(this).scrollTop() > 300;
-
-        scrollToTopButton.toggleClass("visible", mustShow);
-
-        setTimeout(() => {
-          scrollToTopButton.toggleClass("d-none", !mustShow);
-          scrollToTopButton.toggleClass("d-flex", mustShow);
-        }, 300);
-      });
-
-      scrollToTopButton.click(function () {
+      // Smooth scroll with better performance
+      scrollToTopButton.click(function (e) {
+        e.preventDefault();
         $('[data-bs-toggle="tooltip"]').tooltip('hide');
-        $('html, body').animate({ scrollTop: 0 }, 'fast');
-        return false;
+        window.scrollTo({
+          top: 0,
+          behavior: 'smooth'
+        });
       });
     });
   </script>
