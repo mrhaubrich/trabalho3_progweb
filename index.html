@@ -244,11 +244,14 @@
       let fetched = 0;
       let fullyLoaded = false;
 
-      var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
-      var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
-        return new bootstrap.Tooltip(tooltipTriggerEl);
-      });
+      // Replace the old tooltip initialization with this
+      const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]');
+      const tooltipList = [...tooltipTriggerList].map(el => new bootstrap.Tooltip(el));
 
+      // Add these variables at the top with other declarations
+      let isScrolling = false;
+      let scrollTimeout;
+      let touchStartY;
 
       async function autenticar() {
         const endpoint = "Discos/autenticar";
@@ -365,6 +368,32 @@
         $("#imageModal").modal("show");
       }
 
+      // Replace the click handler section with this improved version
+      function attachImageHandlers() {
+        $(".clickable-image")
+          .off("click touchstart touchend")
+          .on("touchstart", function (e) {
+            touchStartY = e.originalEvent.touches[0].clientY;
+          })
+          .on("touchend", function (e) {
+            e.preventDefault();
+            const touchEndY = e.originalEvent.changedTouches[0].clientY;
+            const touchDiff = Math.abs(touchEndY - touchStartY);
+
+            if (touchDiff < 10 && !isScrolling) { // Only trigger if it's a tap, not a scroll
+              const $img = $(this);
+              openModal($img);
+            }
+          })
+          .on("click", function (e) {
+            if (!isScrolling) {
+              const $img = $(this);
+              openModal($img);
+            }
+          });
+      }
+
+      // Update the getDiscos function to use the new handler
       async function getDiscos(numeroInicio = 1, quantidade = 12) {
         loading(true);
         if (!token) {
@@ -429,20 +458,7 @@
           $("#image-container").append($imageDiv);
         });
 
-        // Add click handler for images
-        $(".clickable-image")
-          .off("click")
-          .on("click", function () {
-            const $img = $(this);
-            openModal($img);
-          });
-
-        // Add touch event handling
-        $('.clickable-image').on('touchend', function (e) {
-          e.preventDefault();
-          const $img = $(this);
-          openModal($img);
-        });
+        attachImageHandlers();
 
         fetched += data.length;
 
@@ -458,41 +474,60 @@
       await getDiscos();
 
       // Improve scroll performance
-      let isScrolling;
       $(window).scroll(function () {
-        clearTimeout(isScrolling);
+        isScrolling = true;
+        clearTimeout(scrollTimeout);
 
-        isScrolling = setTimeout(function () {
-          if (fullyLoaded) return;
+        scrollTimeout = setTimeout(function () {
+          isScrolling = false;
+        }, 150); // Reset scroll state after scrolling stops
 
-          const scrollPosition = $(window).scrollTop() + $(window).height();
-          const threshold = $(document).height() - 100;
+        // Rest of your existing scroll logic
+        if (fullyLoaded) return;
 
-          if (scrollPosition > threshold) {
-            if (!$("#loading").hasClass("d-none")) return;
-            getNextPage();
-          }
+        const scrollPosition = $(window).scrollTop() + $(window).height();
+        const threshold = $(document).height() - 100;
 
-          // Scroll to top button visibility
-          const mustShow = $(window).scrollTop() > 300;
-          scrollToTopButton.toggleClass("visible", mustShow);
-          setTimeout(() => {
-            scrollToTopButton.toggleClass("d-none", !mustShow);
-            scrollToTopButton.toggleClass("d-flex", mustShow);
-          }, 300);
-        }, 100);
+        if (scrollPosition > threshold) {
+          if (!$("#loading").hasClass("d-none")) return;
+          getNextPage();
+        }
+
+        // Scroll to top button visibility
+        const mustShow = $(window).scrollTop() > 300;
+        scrollToTopButton.toggleClass("visible", mustShow);
+        setTimeout(() => {
+          scrollToTopButton.toggleClass("d-none", !mustShow);
+          scrollToTopButton.toggleClass("d-flex", mustShow);
+        }, 300);
       });
 
       const scrollToTopButton = $("#scroll-to-top");
 
       // Smooth scroll with better performance
-      scrollToTopButton.click(function (e) {
-        e.preventDefault();
-        $('[data-bs-toggle="tooltip"]').tooltip('hide');
-        window.scrollTo({
-          top: 0,
-          behavior: 'smooth'
+      scrollToTopButton
+        .on('touchstart click', function (e) {
+          e.preventDefault();
+          const tooltip = bootstrap.Tooltip.getInstance(this);
+          if (tooltip) {
+            tooltip.hide();
+          }
+          $('html, body').animate({ scrollTop: 0 }, 'fast');
+        })
+        .on('touchend', function (e) {
+          e.preventDefault();
+          const tooltip = bootstrap.Tooltip.getInstance(this);
+          if (tooltip) {
+            tooltip.hide();
+          }
         });
+
+      // Re-enable tooltips after they're hidden
+      scrollToTopButton.on('hidden.bs.tooltip', function () {
+        const tooltip = bootstrap.Tooltip.getInstance(this);
+        if (tooltip) {
+          tooltip.enable();
+        }
       });
     });
   </script>
