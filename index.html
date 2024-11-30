@@ -529,6 +529,73 @@
           tooltip.enable();
         }
       });
+
+      function isNearBottom() {
+        const windowHeight = $(window).height();
+        const documentHeight = $(document).height();
+        const scrollTop = $(window).scrollTop();
+        const buffer = window.innerWidth <= 768 ? 1000 : 100; // Larger buffer for mobile
+
+        return (windowHeight + scrollTop + buffer) >= documentHeight;
+      }
+
+      let loadingNextPage = false;
+      async function tryLoadNextPage() {
+        if (fullyLoaded || loadingNextPage || $("#loading").hasClass("d-none") === false) {
+          return;
+        }
+
+        loadingNextPage = true;
+        try {
+          await getNextPage();
+        } finally {
+          loadingNextPage = false;
+        }
+      }
+
+      // Replace the scroll handler with this improved version
+      let scrollThrottle;
+      $(window).on('scroll touchmove', function () {
+        isScrolling = true;
+        clearTimeout(scrollTimeout);
+        clearTimeout(scrollThrottle);
+
+        scrollThrottle = setTimeout(function () {
+          if (isNearBottom()) {
+            tryLoadNextPage();
+          }
+
+          // Scroll to top button visibility
+          const mustShow = $(window).scrollTop() > 300;
+          scrollToTopButton.toggleClass("visible", mustShow);
+          setTimeout(() => {
+            scrollToTopButton.toggleClass("d-none", !mustShow);
+            scrollToTopButton.toggleClass("d-flex", mustShow);
+          }, 300);
+        }, 100); // Throttle scroll events
+
+        scrollTimeout = setTimeout(function () {
+          isScrolling = false;
+        }, 150);
+      });
+
+      // Add intersection observer as backup for scroll detection
+      const options = {
+        root: null,
+        rootMargin: '0px',
+        threshold: 0.1
+      };
+
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            tryLoadNextPage();
+          }
+        });
+      }, options);
+
+      // Observe the loading element
+      observer.observe(document.getElementById('loading'));
     });
   </script>
 </body>
